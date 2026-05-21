@@ -28,7 +28,7 @@ jobs:
         ref: refs/tags/r2026.05
         path: easycrypt
     - name: Compile & Install EasyCrypt
-      run:
+      run: |
         opam pin add -n easycrypt easycrypt
         opam install easycrypt
     - name: Detect SMT provers
