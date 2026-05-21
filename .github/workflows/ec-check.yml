@@ -16,23 +16,10 @@ jobs:
     name: Easycrypt Proof Checking
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/easycrypt/ec-build-box:r2026.05
+      image: ghcr.io/easycrypt/ec-test-box:release
     strategy:
       fail-fast: false
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/checkout@v4
-      name: Checkout EasyCrypt
-      with:
-        repository: EasyCrypt/easycrypt
-        ref: refs/tags/r2026.05
-        path: easycrypt
-    - name: Compile & Install EasyCrypt
-      run: |
-        opam pin add -n easycrypt easycrypt
-        opam install easycrypt
-    - name: Detect SMT provers
-      run: |
-        opam exec -- easycrypt why3config -why3 ~/.why3.conf
     - name: Compile Project
       run: opam exec -- make check
