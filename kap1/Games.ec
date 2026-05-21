@@ -159,7 +159,7 @@ module Game1a = Game1 with {
   ]
   proc send_msg3 [
     ^if.^match#IPending.^match ~ (dec (oget psk_map.[m1.`1, b]) (msg2_data m1.`1 b m1.`2) m2)
-    [^if.^match#IPending.^match#Some.^cok<$ - ^k<-] ~ {
+    ^if.^match#IPending.^match#Some.:[^cok<$ .. ^k<-] ~ {
       cok <$ enc (oget psk_map.[m1.`1, b]) (msg3_data m1.`1 b m1.`2 m2) nok;
       k <- prf (na, nb) (m1.`1, b);
     }
@@ -179,7 +179,7 @@ module Game2 = Game1a with {
     -1 + { dec_map <- empty; bad <- false; }
   ]
   proc send_msg1 [
-    [^if.^na<$ - ^ca<$] ~ {
+    ^if.:[^na<$ .. ^ca<$] ~ {
       ca <$ dctxt;
       bad <- bad \/ exists ad, (ad, ca) \in dec_map;
       na <$ dnonce;
@@ -188,7 +188,7 @@ module Game2 = Game1a with {
   ]
   proc send_msg2 [
     ^if.^match ~ (dec_map.[msg1_data a b, ca])
-    [^if.^match#Some.^nb<$ - ^cb<$] ~ {
+    ^if.^match#Some.:[^nb<$ .. ^cb<$] ~ {
       cb <$ dctxt;
       bad <- bad \/ exists ad, (ad, cb) \in dec_map;
       nb <$ dnonce;
@@ -197,7 +197,7 @@ module Game2 = Game1a with {
   ]
   proc send_msg3 [
     ^if.^match#IPending.^match ~ (dec_map.[msg2_data m1.`1 b m1.`2, m2])
-    [^if.^match#IPending.^match#Some.^nok<$ - ^cok<$] ~ {
+    ^if.^match#IPending.^match#Some.:[^nok<$ .. ^cok<$] ~ {
       cok <$ dctxt;
       bad <- bad \/ exists ad, (ad, cok) \in dec_map;
       nok <$ dnonce;
@@ -211,9 +211,9 @@ module Game2 = Game1a with {
 
 (* No ctxt collisions *)
 module Game3 = Game2 with {
-  proc send_msg1 [[^if.^bad<- - ^mo<-] + (!bad)]
-  proc send_msg2 [[^if.^match#Some.^bad<- - ^mo<-] + (!bad)]
-  proc send_msg3 [[^if.^match#IPending.^match#Some.^bad<- - ^mo<-] + (!bad)]
+  proc send_msg1 [^if.:[^bad<- .. ^mo<-] + (!bad)]
+  proc send_msg2 [^if.^match#Some.:[^bad<- .. ^mo<-] + (!bad)]
+  proc send_msg3 [^if.^match#IPending.^match#Some.:[^bad<- .. ^mo<-] + (!bad)]
 }.
 
 (* Cleanup session state: no longer store nonces *)
@@ -312,7 +312,7 @@ module Game3c = Game3b with {
 (* Remove guards for retrieving nonces *)
 module Game3d = Game3c with {
   proc send_msg3 [^if.^match#IPending.^match#Some.^if.^if - .^if.^match#IPending.^match#Some.^if.^if - .]
-  proc send_fin [[^if.^match#RPending.^match#Some.^na<$ - ^if{2}] -]
+  proc send_fin [^if.^match#RPending.^match#Some.:[^na<$ .. ^if{2}] -]
 }.
 
 (* Merge nonce_map into one *)
@@ -323,7 +323,7 @@ module Game4 = Game3d with {
   proc init_mem [ ^bad<- & +1
                  -1 + { prfkey_map <- empty; }]
   proc send_msg3 [
-    [^if.^match#IPending.^match#Some.^if.^<-{2} - ^k<-] ~ {
+    ^if.^match#IPending.^match#Some.^if.:[^<-{2} .. ^k<-] ~ {
       prfkey_map.[msg3_data m1.`1 b m1.`2 m2, cok] <- (na, nb');
       k <- prf (oget prfkey_map.[msg3_data m1.`1 b m1.`2 m2, cok]) (m1.`1, b);
     }
@@ -362,7 +362,7 @@ module Game5a = Game5 with {
     ^if.^match#RPending.^match#Some.^k<- ~ { k <- witness; }
   ]
   proc reveal [
-    [^if.^match#Accepted.^if.^state_map<- - ^ko<-] ~ {
+    ^if.^match#Accepted.^if.:[^state_map<- .. ^ko<-] ~ {
       ko <- Some (oget key_map.[t]);
       state_map.[h] <- (r, Observed t (oget ko));
     }
@@ -377,7 +377,7 @@ module Game5a = Game5 with {
 (* Only sample and store keys in reveal/test queries *)
 module Game5b = Game5a with {
   proc send_msg3 [
-    [^if.^match#IPending.^match#Some.^if.^k<$ - ^key_map<-] -
+    ^if.^match#IPending.^match#Some.^if.:[^k<$ .. ^key_map<-] -
   ]
   proc reveal [
     var k' : skey
@@ -555,7 +555,7 @@ hoare Game1a_inv_send_fin: Game1a.send_fin:
     (forall a i, Game1a_inv Game1a.state_map Game1a.psk_map a i).
 proof.
 proc; inline *.
-sp; wp ^if; if => //.
+sp; if => //.
 sp; match; ~2: by auto.
 by sp; match; auto => />; smt(get_setE).
 qed.
@@ -566,7 +566,7 @@ hoare Game1a_inv_reveal: Game1a.reveal:
     (forall a i, Game1a_inv Game1a.state_map Game1a.psk_map a i).
 proof.
 proc; inline *.
-sp; wp ^if; if => //.
+sp; if => //.
 sp; match; 1,2,4,5: by auto.
 auto => />.
 smt(get_setE).
@@ -578,7 +578,7 @@ hoare Game1a_inv_test: Game1a.test:
     (forall a i, Game1a_inv Game1a.state_map Game1a.psk_map a i).
 proof.
 proc; inline *.
-sp; wp ^if; if => //.
+sp; if => //.
 sp; match; ~3: by auto.
 sp; if => //.
 by sp; if; auto => />; smt(get_setE).
@@ -642,7 +642,7 @@ hoare Game2_inv_send_fin: Game2.send_fin:
     (forall a i, Game1a_inv Game2.state_map Game2.psk_map a i).
 proof.
 proc; inline *.
-sp; wp ^if; if => //.
+sp; if => //.
 sp; match; 1, 3..5: by auto.
 sp; match.
 + auto => />.
@@ -743,7 +743,7 @@ hoare Game3_inv_send_fin: Game3.send_fin:
     (forall a i, Game3_inv Game3.state_map Game3.dec_map a i).
 proof.
 proc; inline *.
-sp; wp ^if; if => //.
+sp; if => //.
 sp; match; ~2: by auto.
 by sp; match; auto => />; smt(get_setE).
 qed.
@@ -754,7 +754,7 @@ hoare Game3_inv_reveal: Game3.reveal:
     (forall a i, Game3_inv Game3.state_map Game3.dec_map a i).
 proof.
 proc; inline *.
-sp; wp ^if; if => //.
+sp; if => //.
 sp; match; ~3: by auto.
 auto => />.
 smt(get_setE).
@@ -766,7 +766,7 @@ hoare Game3_inv_test: Game3.test:
     (forall a i, Game3_inv Game3.state_map Game3.dec_map a i).
 proof.
 proc; inline *.
-sp; wp ^if; if => //.
+sp; if => //.
 sp; match; ~3: by auto.
 sp; if => //.
 by if; auto => />; smt(get_setE).
@@ -866,7 +866,7 @@ hoare Game3d_inv_send_fin: Game3d.send_fin:
   (Game3d_inv Game3d.state_map Game3d.dec_map Game3d.nonce_map).
 proof.
 proc.
-sp; wp ^if; if=> //.
+sp; if=> //.
 sp; match => //.
 sp; match; auto; smt(get_setE).
 qed.
@@ -877,7 +877,7 @@ hoare Game3d_inv_reveal: Game3d.reveal:
   (Game3d_inv Game3d.state_map Game3d.dec_map Game3d.nonce_map).
 proof.
 proc.
-sp; wp ^if; if => //.
+sp; if => //.
 sp; match; 1,2,4,5: by auto.
 auto=> />.
 smt(get_setE).
@@ -889,7 +889,7 @@ hoare Game3d_inv_test: Game3d.test:
   (Game3d_inv Game3d.state_map Game3d.dec_map Game3d.nonce_map).
 proof.
 proc.
-sp; wp ^if; if => //.
+sp; if => //.
 sp; match; 1,2,4,5: by auto.
 sp; if => //.
 if; auto; smt(get_setE).
@@ -1037,7 +1037,7 @@ hoare Game5c_inv_send_fin: Game5c.send_fin:
   Game5c_inv Game5c.state_map Game5c.dec_map Game5c.key_map.
 proof.
 proc.
-sp; wp ^if; if=> //.
+sp; if=> //.
 sp; match => //.
 sp; match => //.
 + auto=> />.
@@ -1064,7 +1064,7 @@ hoare Game5c_inv_reveal: Game5c.reveal:
   Game5c_inv Game5c.state_map Game5c.dec_map Game5c.key_map.
 proof.
 proc.
-sp; wp ^if; if => //.
+sp; if => //.
 sp; match; 1,2,4,5: by auto.
 sp; if => //.
 auto => />.
@@ -1084,7 +1084,7 @@ hoare Game5c_inv_test: Game5c.test:
   Game5c_inv Game5c.state_map Game5c.dec_map Game5c.key_map.
 proof.
 proc.
-sp; wp ^if; if => //.
+sp; if => //.
 sp; match; 1,2,4,5: by auto.  
 sp; if => //.
 case (Game5c.b0).
