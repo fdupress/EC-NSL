@@ -16,14 +16,18 @@ jobs:
     name: Easycrypt Proof Checking
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/easycrypt/ec-test-box:release
+      image: docker:29-cli
     strategy:
       fail-fast: false
     steps:
-    - uses: actions/checkout@v4
-    - name: Print EasyCrypt configuration
-      run: opam exec -- easycrypt config
-    - name: Reconfigure why3 just in case
-      run: opam exec -- easycrypt why3config
+    - uses: actions/checkout@v6
+    - name: Do some recon
+      run: |
+        ls -R .
+        pwd
     - name: Compile Project
-      run: opam exec -- make check
+      run: |
+        docker run \
+          -v /__w/EC-NSL/EC-NSL:/home/charlie/project:Z \
+          ghcr.io/easycrypt/ec-test-box:release \
+          sh -c "ls -R . && opam exec -- make -C project check"
